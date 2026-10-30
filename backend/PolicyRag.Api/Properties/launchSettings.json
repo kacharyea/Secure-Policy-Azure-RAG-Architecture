@@ -1,0 +1,65 @@
+{
+  "profiles": {
+    "EntraFixture": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Rag__Mode": "Fixture",
+        "Rag__UseEntraAuthentication": "true",
+        "BrowserSignIn__Enabled": "true"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5280"
+    },
+    "Azure": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Rag__Mode": "Azure",
+        "BrowserSignIn__Enabled": "true"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5280"
+    },
+    "Local": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Rag__Mode": "Fixture",
+        "Rag__UseEntraAuthentication": "false",
+        "BrowserSignIn__Enabled": "false"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5270"
+    },
+    "LocalHttps": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Rag__Mode": "Fixture",
+        "Rag__UseEntraAuthentication": "false",
+        "BrowserSignIn__Enabled": "false"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7017;http://localhost:5270"
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:51265/",
+      "sslPort": 44358
+    }
+  }
+}

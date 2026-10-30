@@ -1,0 +1,1 @@
+The access review draft says that privileged access requires periodic review. This excerpt does not specify a review frequency, identify a reviewer, or provide a completed review record.

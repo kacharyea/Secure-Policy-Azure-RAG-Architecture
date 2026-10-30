@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/PolicyRag.Api/PolicyRag.Api.csproj" />
+    <Project Path="backend/PolicyRag.Application/PolicyRag.Application.csproj" />
+    <Project Path="backend/PolicyRag.Infrastructure/PolicyRag.Infrastructure.csproj" />
+    <Project Path="backend/PolicyRag.Indexer/PolicyRag.Indexer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SecurePolicyRag.Tests/SecurePolicyRag.Tests.csproj" />
+  </Folder>
+</Solution>

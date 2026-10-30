@@ -1,0 +1,16 @@
+<policies>
+  <inbound>
+    <return-response>
+      <set-status code="403" reason="Caller authorization is not configured" />
+      <set-header name="Content-Type" exists-action="override">
+        <value>application/json</value>
+      </set-header>
+      <set-body>{"error":{"code":"gateway_configuration_pending","message":"Model access is disabled until Entra caller authorization and routing are configured."}}</set-body>
+    </return-response>
+  </inbound>
+  <backend>
+    <forward-request />
+  </backend>
+  <outbound />
+  <on-error />
+</policies>

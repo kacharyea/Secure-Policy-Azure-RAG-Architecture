@@ -1,0 +1,66 @@
+<!--
+  This is the global (all-APIs) policy document. It has no parent policy to
+  inherit from, so <base /> is intentionally omitted everywhere below: APIM
+  rejects <base /> in the global scope with
+  "Element <base/> is not allowed in global context".
+-->
+<policies>
+  <inbound>
+    <!--
+      Caller authorization: only a bearer token issued by the approved tenant,
+      for this gateway's own audience, with the ModelGateway.Invoke role, may
+      reach the backend. This never accepts the browser-signin audience or
+      ignores missing/invalid tokens.
+    -->
+    <validate-jwt header-name="Authorization" failed-validation-httpcode="401"
+        failed-validation-error-message="Unauthorized: a valid ModelGateway.Invoke access token is required."
+        require-expiration-time="true" require-scheme="Bearer" require-signed-tokens="true">
+      <openid-config url="https://login.microsoftonline.com/__TENANT_ID__/v2.0/.well-known/openid-configuration" />
+      <audiences>
+        <audience>__GATEWAY_AUDIENCE__</audience>
+      </audiences>
+      <issuers>
+        <issuer>https://login.microsoftonline.com/__TENANT_ID__/v2.0</issuer>
+      </issuers>
+      <required-claims>
+        <claim name="roles" match="any">
+          <value>ModelGateway.Invoke</value>
+        </claim>
+      </required-claims>
+    </validate-jwt>
+    <!--
+      Routing: map the simplified public operations to the Azure OpenAI v1 GA
+      surface. Only these two approved operations are routed; any other
+      operation was already rejected by APIM before this policy runs.
+    -->
+    <choose>
+      <when condition="@(context.Operation.Id == &quot;embeddings&quot;)">
+        <rewrite-uri template="/openai/v1/embeddings" copy-unmatched-params="false" />
+      </when>
+      <when condition="@(context.Operation.Id == &quot;chat-completions&quot;)">
+        <rewrite-uri template="/openai/v1/chat/completions" copy-unmatched-params="false" />
+      </when>
+      <otherwise>
+        <return-response>
+          <set-status code="404" reason="Unsupported gateway operation" />
+        </return-response>
+      </otherwise>
+    </choose>
+    <!--
+      Backend authentication: the caller's token never reaches Foundry. APIM's
+      own system-assigned identity (already scoped to Cognitive Services
+      OpenAI User, nothing broader) requests its own token for the backend.
+    -->
+    <authentication-managed-identity resource="https://cognitiveservices.azure.com"
+        output-token-variable-name="gateway-msi-token" ignore-error="false" />
+    <set-header name="Authorization" exists-action="override">
+      <value>@("Bearer " + (string)context.Variables["gateway-msi-token"])</value>
+    </set-header>
+    <set-header name="api-key" exists-action="delete" />
+  </inbound>
+  <backend>
+    <forward-request />
+  </backend>
+  <outbound />
+  <on-error />
+</policies>

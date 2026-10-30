@@ -1,0 +1,13 @@
+{
+  "subscriptionId": "<subscription-guid>",
+  "tenantId": "<tenant-guid>",
+  "resourceGroupName": "rg-secure-policy-rag",
+  "location": "eastus2",
+  "searchLocation": "eastus2",
+  "publisherEmail": "azure-admin@example.com",
+  "ownerPrincipalId": "<approved-owner-user-object-id>",
+  "operatorPrincipalId": "<approved-blob-uploader-user-object-id>",
+  "employeeMemberIds": [],
+  "reviewerMemberIds": [],
+  "appServiceName": ""
+}

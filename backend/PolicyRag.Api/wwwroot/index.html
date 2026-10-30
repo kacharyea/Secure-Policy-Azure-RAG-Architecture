@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secure Policy RAG Sample</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">CUSTOMER-READY SAMPLE · FICTIONAL DATA ONLY</div>
+    <h1>Secure Policy RAG Sample</h1>
+    <p>The model proposes. The application enforces boundaries. A human reviews the draft.</p>
+  </header>
+  <main>
+    <section class="notice" aria-label="Execution mode"><strong id="mode">Loading configuration…</strong><p id="notice"></p></section>
+    <div class="layout">
+      <section class="panel" aria-labelledby="request-heading">
+        <h2 id="request-heading">1. Ask an authorized question</h2>
+        <div id="fixture-identity">
+          <label for="profile">Synthetic employee identity — not real authentication</label>
+          <select id="profile"></select>
+        </div>
+        <div id="azure-identity" hidden>
+          <div id="browser-sign-in" hidden>
+            <p id="signed-in">Not signed in.</p>
+            <button id="sign-in" type="button">Sign in with Microsoft</button>
+            <button id="sign-out" type="button" class="secondary" disabled>Sign out</button>
+            <p class="hint">Real Entra identity. Document access comes from validated API-token groups, not this account label. Tokens are cached in memory; temporary login state uses session storage.</p>
+          </div>
+          <div id="manual-token">
+          <label for="token">Delegated API access token (memory only; never saved)</label>
+          <input id="token" type="password" autocomplete="off" placeholder="Use an approved API token; not a provider key">
+          <p class="hint">Manual token input is available only when browser sign-in is not configured.</p>
+          </div>
+          <button id="load-documents" type="button">Reload permitted documents</button>
+        </div>
+        <label for="document">Document scope</label>
+        <select id="document"><option value="">All authorized policies</option></select>
+        <form id="ask-form">
+          <label for="question">Question</label>
+          <textarea id="question" maxlength="2000" rows="4" required>What are the privileged access review requirements?</textarea>
+          <button id="ask" type="submit">Send</button>
+        </form>
+        <h3>Security test cases</h3>
+        <div class="cases">
+          <button type="button" data-case="normal">1 · Authorized request</button>
+          <button type="button" data-case="denied">2 · Denied document</button>
+          <button type="button" data-case="implicit">2b · Free-text restricted question</button>
+          <button type="button" data-case="injection">3 · Untrusted appendix</button>
+          <button type="button" data-case="missing">4 · Missing evidence</button>
+        </div>
+        <p id="case-hint" class="hint">Case buttons prepare a synthetic test; press Retrieve and draft to execute it. The denied case deliberately requests a known forbidden ID.</p>
+      </section>
+      <section class="panel" aria-labelledby="result-heading">
+        <h2 id="result-heading">2. Conversation</h2>
+        <div id="status" role="status" aria-live="polite">Ready. Choose a security test case or ask a question.</div>
+        <div id="transcript" class="transcript" aria-live="polite">
+          <p class="hint" id="transcript-empty">No questions asked yet. Each question is independently authorized — this is a running log, not shared memory between turns.</p>
+        </div>
+      </section>
+    </div>
+    <section class="panel evidence" aria-labelledby="evidence-heading">
+      <h2 id="evidence-heading">Control evidence</h2>
+      <p class="hint" id="evidence-mode-hint">In fixture mode actual embedding/generation calls remain zero. Keyword searches are local fixture operations, not Azure AI Search.</p>
+      <dl id="evidence"><dt>Run</dt><dd>No request yet</dd></dl>
+    </section>
+    <footer>No agents, write tools, compliance approval, or production data. Exact quotations prove source membership, not semantic relevance or truth. Local drafts expire after one hour and disappear on restart.</footer>
+  </main>
+</body>
+</html>

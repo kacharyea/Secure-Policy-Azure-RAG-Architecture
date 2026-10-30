@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "defaultProvider": "jsdelivr",
+  "libraries": [
+    {
+      "library": "@azure/msal-browser@4.30.0",
+      "destination": "backend/PolicyRag.Api/wwwroot/vendor/msal/",
+      "files": ["lib/msal-browser.min.js", "LICENSE"]
+    }
+  ]
+}
