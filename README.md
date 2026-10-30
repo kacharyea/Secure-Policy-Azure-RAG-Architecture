@@ -24,6 +24,55 @@ production compliance system.
 - Tests for explicit denial, permission-prefiltered retrieval, prompt-injection content,
   missing evidence, exact-quote validation, and reviewer access.
 
+## Architecture
+
+### Overall request flow
+
+![Secure Policy RAG request flow](docs/architecture/request-flow.svg)
+
+[Open the full-size request-flow diagram](docs/architecture/request-flow.svg).
+Read the numbered API steps left-to-right, then right-to-left on the second row.
+The browser's delegated user token establishes document entitlements. A separate backend
+application token authenticates service calls; it does not replace user authorization.
+
+The API embeds the authorized request through APIM, retrieves with an ACL prefilter, rechecks
+all passages, and uses the same APIM gateway for generation. No authorized context means no
+generation call. Only exact quotations from authorized passages can become an answered draft.
+Human approval is a separate, explicitly authorized operation, not a model action.
+
+### Resource and identity layout
+
+![Secure Policy RAG resource and identity layout](docs/architecture/resource-layout.svg)
+
+[Open the full-size resource-layout diagram](docs/architecture/resource-layout.svg).
+This shows resources declared by the templates, not a claim that they have been deployed.
+Entra applications, service principals, grants, and groups belong to the tenant, outside the
+resource group's lifecycle. Optional App Service uses the runtime managed identity; a locally
+running Azure-mode backend uses its dedicated certificate-backed identity instead.
+
+| Component | Purpose and access boundary | Infrastructure |
+|---|---|---|
+| Browser + .NET API | Same-origin UI, bearer-token validation, document authorization, exact-quote validation, and review | Local process, or optional [App Service](infra/app-service.bicep) |
+| Entra registrations + groups | Browser/API delegated permission, gateway application role, and approved user memberships | [User identity](infra/identity.bicep), [gateway identity](infra/gateway-identity.bicep), optional [local service identities](infra/backend-identity.bicep) |
+| Azure AI Search | Hybrid/vector retrieval of text, vectors, and chunk ACLs; runtime reads, separate indexer writes | [Services](infra/services.bicep) |
+| API Management | Validates `ModelGateway.Invoke` application role; routes embeddings and generation with its managed identity | [Services](infra/services.bicep), [gateway policy](infra/gateway-active-policy.xml) |
+| Microsoft Foundry | Account/project and model deployments; only APIM receives inference permission | [Services](infra/services.bicep) |
+| Blob Storage | Optional source workflow; approved operator uploads, indexer reads, container is not anonymous | [Storage](infra/storage.bicep) |
+| Standalone indexer | Explicit ingestion from the approved local manifest or integrity-verified Blob files; embeds through APIM and writes ACL-tagged Search chunks | [Indexer executable](backend/PolicyRag.Indexer/Program.cs); no compute host is automatically deployed |
+| Review store | In-memory sample draft/review state; not a provisioned database or durable production store | [Review store](backend/PolicyRag.Infrastructure/Storage/ReviewStore.cs) |
+
+| Experience | User identity | Retrieval and answers | Backend credential |
+|---|---|---|---|
+| Local fixture | Synthetic employee/reviewer | Local fixtures | None |
+| Entra + fixture | Real Entra user and groups | Local fixtures | No downstream Azure credential needed |
+| Azure mode, local host | Real Entra user and groups | Search + APIM + Foundry | Dedicated service principal with certificate |
+| Azure mode, App Service | Real Entra user and groups | Search + APIM + Foundry | Runtime user-assigned managed identity |
+
+The diagrams intentionally do not show private networking, a hosted agent, a production ACL-sync
+pipeline, or durable review storage: those are not implemented by this sample. The current service
+endpoints are public with key authentication disabled; the Blob container is non-anonymous, not
+network-private. See the production hardening checklist before adapting this architecture.
+
 ## Security test cases
 
 | Case | Expected behavior |

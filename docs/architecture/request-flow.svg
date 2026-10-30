@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1080" viewBox="0 0 1440 1080" style="max-width:1440px;width:100%;height:auto" role="img" aria-labelledby="title description">
+  <title id="title">Secure Policy RAG: end-to-end request flow</title>
+  <desc id="description">A browser signs in with Entra. The API validates the user token, authorizes documents, embeds through APIM, queries Search with a permission prefilter, rechecks passages, generates through APIM, validates exact quotations, and returns a draft for separate human review. Only APIM has model inference access.</desc>
+  <defs>
+    <linearGradient id="header" x2="1" y2="0">
+      <stop stop-color="#10233f"/>
+      <stop offset="1" stop-color="#174d70"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-15%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#173553" flood-opacity=".08"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse">
+      <path d="M0 0 8 4 0 8Z" fill="#54708d"/>
+    </marker>
+    <marker id="serviceArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0 8 4 0 8Z" fill="#087f8c"/>
+    </marker>
+    <style>
+      text { font-family: "Segoe UI", Arial, sans-serif; fill: #17314f; }
+      .title { font-size: 34px; font-weight: 700; fill: white; }
+      .subtitle { font-size: 18px; fill: #d3e6f4; }
+      .heading { font-size: 21px; font-weight: 700; }
+      .body { font-size: 17px; fill: #435b73; }
+      .small { font-size: 15px; fill: #526981; }
+      .eyebrow { font-size: 14px; font-weight: 700; letter-spacing: 1.4px; fill: #426284; }
+      .card { fill: white; stroke: #d4dfeb; stroke-width: 1.5; filter: url(#shadow); }
+      .sequence { fill: none; stroke: #54708d; stroke-width: 2.5; marker-end: url(#arrow); }
+      .service { fill: none; stroke: #087f8c; stroke-width: 2.5; marker-end: url(#serviceArrow); }
+      .badge { fill: #1763ad; }
+      .number { fill: white; font-size: 17px; font-weight: 700; text-anchor: middle; }
+    </style>
+  </defs>
+  <rect width="1440" height="1080" rx="20" fill="#f3f7fc"/>
+  <path d="M20 0H1420Q1440 0 1440 20V132H0V20Q0 0 20 0" fill="url(#header)"/>
+  <text x="48" y="58" class="title">Secure Policy RAG</text>
+  <text x="48" y="96" class="subtitle">REQUEST FLOW  /  Authorize before grounding. Validate before returning.</text>
+  <rect x="1092" y="40" width="300" height="44" rx="22" fill="#ffffff" fill-opacity=".12"/>
+  <text x="1242" y="68" text-anchor="middle" fill="white" style="fill:white;font-size:16px;font-weight:600">AZURE MODE / FIXED RAG WORKFLOW</text>
+
+  <text x="64" y="169" class="eyebrow">HUMAN IDENTITY</text>
+  <rect x="64" y="190" width="244" height="120" rx="14" class="card"/>
+  <rect x="64" y="190" width="7" height="120" rx="3" fill="#1763ad"/>
+  <text x="88" y="225" class="heading">Browser UI</text>
+  <text x="88" y="254" class="body">Employee or reviewer</text>
+  <text x="88" y="282" class="body">Same origin as the API</text>
+  <rect x="520" y="190" width="336" height="120" rx="14" class="card"/>
+  <text x="544" y="225" class="heading">Microsoft Entra ID</text>
+  <text x="544" y="254" class="body">User sign-in + API delegated scope</text>
+  <text x="544" y="282" class="body">Group claims in validated tokens</text>
+  <path d="M308 246H520" class="sequence" marker-start="url(#arrow)"/>
+  <text x="414" y="230" text-anchor="middle" class="small">Sign in / acquire token</text>
+  <path d="M186 310V350" class="sequence"/>
+  <text x="202" y="334" class="small">API bearer token</text>
+
+  <rect x="42" y="354" width="836" height="548" rx="18" fill="#e9f1fb" stroke="#bfd3eb"/>
+  <text x="64" y="379" class="eyebrow">.NET API / TRUSTED AUTHORIZATION AND EVIDENCE PIPELINE</text>
+  <path d="M308 446H340" class="sequence"/>
+  <path d="M584 446H616" class="sequence"/>
+  <path d="M738 510V578" class="sequence"/>
+  <path d="M616 638H584" class="sequence"/>
+  <path d="M340 638H308" class="sequence"/>
+  <path d="M186 702V770" class="sequence"/>
+  <path d="M308 830H340" class="sequence"/>
+
+  <rect x="64" y="386" width="244" height="124" rx="13" class="card"/>
+  <circle cx="92" cy="414" r="15" class="badge"/><text x="92" y="420" class="number">1</text>
+  <text x="116" y="421" class="heading">Authenticate</text>
+  <text x="84" y="456" class="body">Validate issuer, audience,</text>
+  <text x="84" y="482" class="body">lifetime, signature, scope</text>
+
+  <rect x="340" y="386" width="244" height="124" rx="13" class="card"/>
+  <circle cx="368" cy="414" r="15" class="badge"/><text x="368" y="420" class="number">2</text>
+  <text x="392" y="421" class="heading">Authorize</text>
+  <text x="360" y="456" class="body">Map groups to entitlements</text>
+  <text x="360" y="482" class="body">Deny forbidden documents</text>
+
+  <rect x="616" y="386" width="240" height="124" rx="13" class="card"/>
+  <circle cx="644" cy="414" r="15" class="badge"/><text x="644" y="420" class="number">3</text>
+  <text x="668" y="421" class="heading">Embed</text>
+  <text x="636" y="456" class="body">Vectorize the question</text>
+  <text x="636" y="482" class="body">Through APIM, not directly</text>
+
+  <rect x="616" y="578" width="240" height="124" rx="13" class="card"/>
+  <circle cx="644" cy="606" r="15" class="badge"/><text x="644" y="612" class="number">4</text>
+  <text x="668" y="613" class="heading">Retrieve</text>
+  <text x="636" y="648" class="body">Vector + keyword search</text>
+  <text x="636" y="674" class="body">Permission preFilter</text>
+
+  <rect x="340" y="578" width="244" height="124" rx="13" class="card"/>
+  <circle cx="368" cy="606" r="15" class="badge"/><text x="368" y="612" class="number">5</text>
+  <text x="392" y="613" class="heading">Recheck</text>
+  <text x="360" y="648" class="body">Manifest, access, integrity</text>
+  <text x="360" y="674" class="body">Reject out-of-scope chunks</text>
+
+  <rect x="64" y="578" width="244" height="124" rx="13" class="card"/>
+  <circle cx="92" cy="606" r="15" class="badge"/><text x="92" y="612" class="number">6</text>
+  <text x="116" y="613" class="heading">Generate</text>
+  <text x="84" y="648" class="body">Authorized context only</text>
+  <text x="84" y="674" class="body">Uses the same APIM route</text>
+
+  <rect x="64" y="770" width="244" height="120" rx="13" class="card"/>
+  <circle cx="92" cy="798" r="15" class="badge"/><text x="92" y="804" class="number">7</text>
+  <text x="116" y="805" class="heading">Validate</text>
+  <text x="84" y="840" class="body">Exact authorized quotations</text>
+  <text x="84" y="866" class="body">Fail closed on mismatch</text>
+
+  <rect x="340" y="770" width="516" height="120" rx="13" class="card"/>
+  <circle cx="368" cy="798" r="15" fill="#087f8c"/><text x="368" y="804" class="number">8</text>
+  <text x="392" y="805" class="heading">Return a draft + control evidence</text>
+  <text x="360" y="840" class="body">An answered draft is Pending, never auto-approved.</text>
+  <text x="360" y="866" class="body">An eligible human reviewer approves or rejects separately.</text>
+
+  <text x="992" y="169" class="eyebrow">AZURE SERVICES / APP-ONLY ACCESS</text>
+  <rect x="992" y="190" width="384" height="120" rx="14" class="card"/>
+  <rect x="992" y="190" width="7" height="120" rx="3" fill="#7057bd"/>
+  <text x="1016" y="224" class="heading">Microsoft Foundry models</text>
+  <text x="1016" y="253" class="body">text-embedding-3-small / gpt-5-mini</text>
+  <text x="1016" y="282" class="body">Only APIM has model inference access</text>
+
+  <rect x="992" y="386" width="384" height="124" rx="14" class="card"/>
+  <rect x="992" y="386" width="7" height="124" rx="3" fill="#087f8c"/>
+  <text x="1016" y="421" class="heading">Azure API Management</text>
+  <text x="1016" y="451" class="body">Requires role: ModelGateway.Invoke</text>
+  <text x="1016" y="479" class="body">Serves steps 3 and 6; strips API keys</text>
+  <path d="M856 446H992" class="service"/>
+  <text x="924" y="425" text-anchor="middle" class="small">Backend token</text>
+  <path d="M1184 386V310" class="service"/>
+  <text x="1200" y="344" class="small">APIM managed identity</text>
+
+  <rect x="992" y="578" width="384" height="124" rx="14" class="card"/>
+  <rect x="992" y="578" width="7" height="124" rx="3" fill="#1763ad"/>
+  <text x="1016" y="613" class="heading">Azure AI Search</text>
+  <text x="1016" y="643" class="body">policy-chunks: vectors + text + ACLs</text>
+  <text x="1016" y="671" class="body">Runtime: Search Index Data Reader</text>
+  <path d="M856 638H992" class="service"/>
+  <text x="924" y="617" text-anchor="middle" class="small">Filtered query</text>
+
+  <rect x="992" y="770" width="384" height="120" rx="14" fill="#e5f4f2" stroke="#b6dcd7"/>
+  <text x="1016" y="803" class="heading">Two different identities</text>
+  <text x="1016" y="832" class="body">User token: document entitlements</text>
+  <text x="1016" y="859" class="body">Backend token: service connectivity</text>
+
+  <rect x="48" y="932" width="1344" height="98" rx="14" fill="white" stroke="#d4dfeb"/>
+  <text x="72" y="963" class="heading">Fail-closed by design</text>
+  <text x="72" y="991" class="body">Denied access stops before embedding/search/generation. No authorized passages means no generation call.</text>
+  <text x="72" y="1015" class="small">Arrows show the main request sequence and selected service calls; responses are omitted. The model never decides permissions.</text>
+  <text x="48" y="1057" class="small">Secure Policy RAG Sample / Fictional data / Architecture describes the implemented Azure-mode workflow, not a production security boundary.</text>
+</svg>
