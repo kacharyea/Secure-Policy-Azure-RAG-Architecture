@@ -10,14 +10,15 @@
 <body>
   <header>
     <div class="eyebrow">CUSTOMER-READY SAMPLE · FICTIONAL DATA ONLY</div>
-    <h1>Secure Policy RAG Sample</h1>
-    <p>The model proposes. The application enforces boundaries. A human reviews the draft.</p>
+    <h1>Policy Evidence Chat</h1>
+    <p>Ask a policy question. Inspect the sources. Review the draft.</p>
   </header>
   <main>
     <section class="notice" aria-label="Execution mode"><strong id="mode">Loading configuration…</strong><p id="notice"></p></section>
     <div class="layout">
-      <section class="panel" aria-labelledby="request-heading">
-        <h2 id="request-heading">1. Ask an authorized question</h2>
+      <section class="panel context-panel" aria-labelledby="request-heading">
+        <div class="eyebrow">YOUR WORKSPACE</div>
+        <h2 id="request-heading">Identity &amp; knowledge</h2>
         <div id="fixture-identity">
           <label for="profile">Synthetic employee identity — not real authentication</label>
           <select id="profile"></select>
@@ -38,12 +39,8 @@
         </div>
         <label for="document">Document scope</label>
         <select id="document"><option value="">All authorized policies</option></select>
-        <form id="ask-form">
-          <label for="question">Question</label>
-          <textarea id="question" maxlength="2000" rows="4" required>What are the privileged access review requirements?</textarea>
-          <button id="ask" type="submit">Send</button>
-        </form>
-        <h3>Security test cases</h3>
+        <p class="hint">Only permitted passages may ground an answer. The model cannot grant access or approve compliance.</p>
+        <h3>Demo scenarios</h3>
         <div class="cases">
           <button type="button" data-case="normal">1 · Authorized request</button>
           <button type="button" data-case="denied">2 · Denied document</button>
@@ -51,20 +48,36 @@
           <button type="button" data-case="injection">3 · Untrusted appendix</button>
           <button type="button" data-case="missing">4 · Missing evidence</button>
         </div>
-        <p id="case-hint" class="hint">Case buttons prepare a synthetic test; press Retrieve and draft to execute it. The denied case deliberately requests a known forbidden ID.</p>
+        <p id="case-hint" class="hint">Case buttons prepare a synthetic test; press Send to execute it. Changing identity clears the conversation. The denied case deliberately requests a known forbidden ID.</p>
       </section>
-      <section class="panel" aria-labelledby="result-heading">
-        <h2 id="result-heading">2. Conversation</h2>
-        <div id="status" role="status" aria-live="polite">Ready. Choose a security test case or ask a question.</div>
-        <div id="transcript" class="transcript" aria-live="polite">
-          <p class="hint" id="transcript-empty">No questions asked yet. Each question is independently authorized — this is a running log, not shared memory between turns.</p>
+      <section class="panel chat-panel" aria-labelledby="result-heading">
+        <div class="chat-heading">
+          <div><h2 id="result-heading">Policy conversation</h2><p class="hint">Source-backed drafts, not compliance decisions.</p></div>
+          <button id="new-chat" type="button" class="secondary">New chat</button>
         </div>
+        <div id="status" role="status" aria-live="polite">Ready. Choose a demo scenario or ask a question.</div>
+        <div id="transcript" class="transcript" role="log" aria-label="Policy conversation" aria-live="polite" aria-relevant="additions text" tabindex="0">
+          <p class="chat-empty" id="transcript-empty">What would you like to know about your policies? Ask a complete question to see an answer and its supporting sources.</p>
+        </div>
+        <div class="suggestions" aria-label="Suggested questions">
+          <button type="button" class="secondary" data-prompt="What must employees do to secure remote access?">Remote access</button>
+          <button type="button" class="secondary" data-prompt="How long should general training documents be retained?">Document retention</button>
+          <button type="button" class="secondary" data-prompt="How often must privileged access be reviewed, and what must the review record contain?">Access reviews</button>
+        </div>
+        <form id="ask-form" class="composer">
+          <label for="question">Your policy question</label>
+          <textarea id="question" maxlength="2000" rows="3" required placeholder="Ask a complete question about an authorized policy..."></textarea>
+          <div class="composer-actions"><span class="hint">Enter to send &middot; Shift+Enter for a new line</span><button id="ask" type="submit">Send</button></div>
+        </form>
+        <p class="hint memory-notice">Conversation stays in this tab only. Each question is independently authorized; earlier messages are not sent to the model. Include the relevant context in every question.</p>
       </section>
     </div>
     <section class="panel evidence" aria-labelledby="evidence-heading">
-      <h2 id="evidence-heading">Control evidence</h2>
+      <details>
+      <summary id="evidence-heading">Behind the answer: control evidence</summary>
       <p class="hint" id="evidence-mode-hint">In fixture mode actual embedding/generation calls remain zero. Keyword searches are local fixture operations, not Azure AI Search.</p>
       <dl id="evidence"><dt>Run</dt><dd>No request yet</dd></dl>
+      </details>
     </section>
     <footer>No agents, write tools, compliance approval, or production data. Exact quotations prove source membership, not semantic relevance or truth. Local drafts expire after one hour and disappear on restart.</footer>
   </main>

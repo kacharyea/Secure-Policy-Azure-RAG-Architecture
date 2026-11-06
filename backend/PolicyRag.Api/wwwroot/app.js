@@ -66,8 +66,8 @@ function clearTranscript() {
   revision++;
   element("transcript").replaceChildren();
   const empty = document.createElement("p");
-  empty.id = "transcript-empty"; empty.className = "hint";
-  empty.textContent = "No questions asked yet. Each question is independently authorized — this is a running log, not shared memory between turns.";
+  empty.id = "transcript-empty"; empty.className = "chat-empty";
+  empty.textContent = "What would you like to know about your policies? Ask a complete question to see an answer and its supporting sources.";
   element("transcript").append(empty);
   evidence({ run: "No request for this identity yet" });
 }
@@ -81,8 +81,9 @@ function lock(value) {
 function renderTurnResult(bubble, value) {
   bubble.className = "bubble-answer";
   bubble.replaceChildren();
+  const speaker = document.createElement("span"); speaker.className = "speaker"; speaker.textContent = "POLICY ASSISTANT";
   const answer = document.createElement("p"); answer.className = "answer"; answer.textContent = value.answer;
-  bubble.append(answer);
+  bubble.append(speaker, answer);
   if (value.evidenceGaps?.length) {
     const gapsHeading = document.createElement("strong"); gapsHeading.textContent = "Evidence gaps / limitations";
     const gaps = document.createElement("ul");
@@ -90,13 +91,15 @@ function renderTurnResult(bubble, value) {
     bubble.append(gapsHeading, gaps);
   }
   if (value.citations?.length) {
-    const citationsHeading = document.createElement("strong"); citationsHeading.textContent = "Authorized source quotations";
+    const citationsHeading = document.createElement("strong"); citationsHeading.textContent = `Sources (${value.citations.length}) - expand to verify`;
     bubble.append(citationsHeading);
-    for (const source of value.citations) {
-      const box = document.createElement("div"); box.className = "citation";
-      const title = document.createElement("strong"); title.textContent = `${source.title} · ${source.version} · ${source.chunkId}`;
+    for (const [index, source] of value.citations.entries()) {
+      const box = document.createElement("details"); box.className = "citation";
+      const title = document.createElement("summary"); title.textContent = `[${index + 1}] ${source.title}`;
+      const metadata = document.createElement("p"); metadata.className = "source-meta";
+      metadata.textContent = `Document: ${source.documentId} · Version: ${source.version} · Chunk: ${source.chunkId}`;
       const quote = document.createElement("p"); quote.textContent = source.quote;
-      box.append(title, quote); bubble.append(box);
+      box.append(title, metadata, quote); bubble.append(box);
     }
   }
   const evidenceLine = document.createElement("p"); evidenceLine.className = "turn-evidence";
@@ -124,6 +127,12 @@ function renderTurnResult(bubble, value) {
 function renderTurnError(bubble, error) {
   bubble.className = "bubble-answer error";
   bubble.textContent = `${error.message}${error.correlation ? `\nCorrelation: ${error.correlation}` : ""}`;
+  status(error.message, true);
+}
+
+function scrollConversation() {
+  const transcript = element("transcript");
+  transcript.scrollTop = transcript.scrollHeight;
 }
 
 async function loadDocuments() {
@@ -148,29 +157,65 @@ async function loadDocuments() {
 element("ask-form").addEventListener("submit", async event => {
   event.preventDefault();
   if (busy) return;
-  const question = element("question").value;
+  const question = element("question").value.trim();
+  if (!question) {
+    status("Enter a policy question before sending.", true);
+    element("question").focus();
+    return;
+  }
   const documentId = explicitDocument || element("document").value || null;
   lock(true);
   element("transcript-empty")?.remove();
   const turn = document.createElement("div"); turn.className = "turn";
   const questionBubble = document.createElement("div"); questionBubble.className = "bubble-question";
+  const speaker = document.createElement("span"); speaker.className = "speaker"; speaker.textContent = "YOU";
   const meta = document.createElement("span"); meta.className = "meta";
   meta.textContent = documentId ? `Document: ${documentId}` : "Document: all authorized policies";
   const questionText = document.createElement("span"); questionText.textContent = question;
-  questionBubble.append(meta, questionText);
+  questionBubble.append(speaker, meta, questionText);
   const answerBubble = document.createElement("div"); answerBubble.className = "bubble-answer pending";
   answerBubble.textContent = "Checking access and preparing a draft…";
   turn.append(questionBubble, answerBubble);
   element("transcript").append(turn);
-  turn.scrollIntoView({ behavior: "smooth", block: "end" });
+  element("transcript").setAttribute("aria-busy", "true");
+  scrollConversation();
   element("question").value = "";
   try {
     renderTurnResult(answerBubble, await request("/api/ask", {
       method: "POST", body: JSON.stringify({ question, documentId })
     }));
   } catch (error) { renderTurnError(answerBubble, error); }
-  finally { lock(false); }
+  finally {
+    lock(false);
+    element("transcript").setAttribute("aria-busy", "false");
+    scrollConversation();
+    element("question").focus();
+  }
 });
+
+element("question").addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+    event.preventDefault();
+    if (!busy) element("ask-form").requestSubmit();
+  }
+});
+element("new-chat").addEventListener("click", () => {
+  if (busy) return;
+  clearTranscript();
+  explicitDocument = null;
+  element("question").value = "";
+  status("New chat. Local conversation cleared; server drafts are unchanged. Identity and selected document scope are unchanged.");
+  element("question").focus();
+});
+for (const button of document.querySelectorAll("[data-prompt]")) {
+  button.addEventListener("click", () => {
+    if (busy) return;
+    explicitDocument = null;
+    element("question").value = button.dataset.prompt;
+    status("Suggested question ready. Your identity and selected document scope are unchanged. Press Send.");
+    element("question").focus();
+  });
+}
 
 element("profile").addEventListener("change", () => { clearTranscript(); loadDocuments(); });
 element("token").addEventListener("input", clearIdentityView);
@@ -183,7 +228,11 @@ for (const button of document.querySelectorAll("[data-case]")) {
     try {
       const name = button.dataset.case;
       const synthetic = config.authenticationMode === "Synthetic";
-      if (synthetic) element("profile").value = name === "denied" || name === "implicit" ? "alex" : "sam";
+      if (synthetic) {
+        const profile = name === "denied" || name === "implicit" ? "alex" : "sam";
+        if (element("profile").value !== profile) clearTranscript();
+        element("profile").value = profile;
+      }
       await loadDocuments();
       if (name === "implicit") {
         element("question").value = "What are the privileged access review requirements?";
