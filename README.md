@@ -24,6 +24,21 @@ production compliance system.
 - Tests for explicit denial, permission-prefiltered retrieval, prompt-injection content,
   missing evidence, exact-quote validation, and reviewer access.
 
+### Chat experience
+
+The browser provides a chat-first interface with suggested questions, a bottom composer
+(Enter to send; Shift+Enter for a newline), and expandable source cards containing the
+authorized quotation, document ID, version, and chunk ID. Control evidence remains available
+below the conversation, and each answered draft retains its explicit review actions.
+
+This is a tab-local conversation log, not model conversation memory: each request sends only
+the current question and document scope, and is independently authorized. Ask complete questions;
+follow-ups such as "what about that?" do not inherit earlier context. Changing identity clears
+the transcript, including when a synthetic demo scenario switches profiles. **New chat** clears
+the local transcript but does not delete server-side drafts or change identity/document scope.
+Refreshing the page also clears the transcript; no browser transcript storage is used.
+Fixture-mode replies are scripted examples, not evidence of live model or Azure Search behavior.
+
 ## Architecture
 
 ### Overall request flow
