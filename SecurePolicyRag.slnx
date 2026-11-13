@@ -4,6 +4,7 @@
     <Project Path="backend/PolicyRag.Application/PolicyRag.Application.csproj" />
     <Project Path="backend/PolicyRag.Infrastructure/PolicyRag.Infrastructure.csproj" />
     <Project Path="backend/PolicyRag.Indexer/PolicyRag.Indexer.csproj" />
+    <Project Path="backend/PolicyRag.Evaluation/PolicyRag.Evaluation.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SecurePolicyRag.Tests/SecurePolicyRag.Tests.csproj" />

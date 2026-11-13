@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Week 4 evaluation evidence</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/evaluation.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">WEEK 4 · SYNTHETIC EVALUATION EVIDENCE</div>
+    <h1>Evaluate, trace, and hand off</h1>
+    <p><a href="/">Return to policy chat</a></p>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Inspect saved results</h2>
+      <p>Load one report.json, or two baseline/candidate reports. Files stay in this browser; no evaluation or cloud calls are triggered.</p>
+      <label for="reports">Evaluation reports (one or two JSON files; maximum 5 MB each)</label>
+      <input id="reports" type="file" accept=".json,application/json" multiple>
+      <p id="evaluation-status" role="status">No report loaded.</p>
+      <p>PASS means a case met its declared checks, not that it is production-ready. BLOCKED and NOT RUN remain visible. Human quality scores are separate from deterministic citation/fact checks.</p>
+    </section>
+    <section id="comparison" class="panel" aria-label="Comparison"></section>
+    <div id="evaluation-results"></div>
+  </main>
+</body>
+</html>

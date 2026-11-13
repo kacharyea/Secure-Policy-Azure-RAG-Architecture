@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\backend\PolicyRag.Api\PolicyRag.Api.csproj" />
     <ProjectReference Include="..\..\backend\PolicyRag.Application\PolicyRag.Application.csproj" />
     <ProjectReference Include="..\..\backend\PolicyRag.Infrastructure\PolicyRag.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\backend\PolicyRag.Evaluation\PolicyRag.Evaluation.csproj" />
   </ItemGroup>
 
 </Project>

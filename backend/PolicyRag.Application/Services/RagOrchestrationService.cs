@@ -9,37 +9,66 @@ public sealed class RagOrchestrationService(
     public async Task<Draft> AskAsync(
         Caller caller, AskRequest request, RunMetrics metrics, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Question) || request.Question.Length > 2000 ||
-            request.DocumentId?.Length > 100)
-            throw new WorkflowException(400, "invalid_question",
-                "Provide a question of 1-2000 characters and an optional document identifier of at most 100 characters.");
-
-        if (request.DocumentId is not null && !catalog.CanRead(caller, request.DocumentId))
+        using var workflow = WorkflowTracing.StartWorkflow(metrics);
+        using (var stage = WorkflowTracing.Stage(metrics, "authorization"))
         {
-            metrics.Authorization = "Denied";
-            throw new WorkflowException(403, "document_access_denied",
-                "The requested document is unavailable to this identity.");
-        }
-        if (catalog.Authorized(caller).Count == 0)
-        {
-            metrics.Authorization = "Denied";
-            throw new WorkflowException(403, "no_entitlements", "No policy access was granted to this identity.");
-        }
-        metrics.Authorization = "Allowed";
-        var vector = await embeddings.EmbedAsync(request.Question, metrics, cancellationToken);
-        var passages = await search.SearchAsync(
-            caller, request.Question, request.DocumentId, vector, metrics, cancellationToken);
-        catalog.ValidatePassages(caller, passages);
-        if (passages.Select(p => p.ChunkId).Distinct(StringComparer.Ordinal).Count() != passages.Count ||
-            (request.DocumentId is not null && passages.Any(p => p.DocumentId != request.DocumentId)))
-            throw new WorkflowException(502, "retrieval_scope_failed",
-                "The retrieved passages did not satisfy the requested scope.");
+            if (string.IsNullOrWhiteSpace(request.Question) || request.Question.Length > 2000 ||
+                request.DocumentId?.Length > 100)
+                throw new WorkflowException(400, "invalid_question",
+                    "Provide a question of 1-2000 characters and an optional document identifier of at most 100 characters.");
 
-        var model = passages.Count == 0
-            ? new ModelAnswer("insufficient_evidence", [])
-            : await generator.GenerateAsync(request.Question, passages, metrics, cancellationToken);
-        var citations = validation.Validate(model, passages, metrics);
+            if (request.DocumentId is not null && !catalog.CanRead(caller, request.DocumentId))
+            {
+                metrics.Authorization = "Denied";
+                throw new WorkflowException(403, "document_access_denied",
+                    "The requested document is unavailable to this identity.");
+            }
+            if (catalog.Authorized(caller).Count == 0)
+            {
+                metrics.Authorization = "Denied";
+                throw new WorkflowException(403, "no_entitlements", "No policy access was granted to this identity.");
+            }
+            metrics.Authorization = "Allowed";
+            stage.Complete();
+        }
+        float[] vector;
+        using (var stage = WorkflowTracing.Stage(metrics, "embedding"))
+        {
+            vector = await embeddings.EmbedAsync(request.Question, metrics, cancellationToken);
+            stage.Complete();
+        }
+        IReadOnlyList<Passage> passages;
+        using (var stage = WorkflowTracing.Stage(metrics, "retrieval"))
+        {
+            passages = await search.SearchAsync(
+                caller, request.Question, request.DocumentId, vector, metrics, cancellationToken);
+            stage.Complete();
+        }
+        using (var stage = WorkflowTracing.Stage(metrics, "source_checks"))
+        {
+            catalog.ValidatePassages(caller, passages);
+            if (passages.Select(p => p.ChunkId).Distinct(StringComparer.Ordinal).Count() != passages.Count ||
+                (request.DocumentId is not null && passages.Any(p => p.DocumentId != request.DocumentId)))
+                throw new WorkflowException(502, "retrieval_scope_failed",
+                    "The retrieved passages did not satisfy the requested scope.");
+            metrics.RetrievedSourceIds = passages.Select(p => p.ChunkId).ToArray();
+            stage.Complete();
+        }
+        var model = new ModelAnswer("insufficient_evidence", []);
+        if (passages.Count > 0)
+        {
+            using var stage = WorkflowTracing.Stage(metrics, "generation");
+            model = await generator.GenerateAsync(request.Question, passages, metrics, cancellationToken);
+            stage.Complete();
+        }
+        Citation[] citations;
+        using (var stage = WorkflowTracing.Stage(metrics, "validation"))
+        {
+            citations = validation.Validate(model, passages, metrics);
+            stage.Complete();
+        }
         var answered = model.Status == "answered";
+        metrics.AnswerStatus = model.Status;
         var reviewStatus = answered ? "Pending" : "NotApplicable";
         var draft = new Draft(
             Guid.NewGuid(), caller.Id, request.Question,
@@ -51,6 +80,7 @@ public sealed class RagOrchestrationService(
             model.Status, reviewStatus, clock.GetUtcNow(), null,
             metrics.Snapshot(reviewStatus, citations.Select(c => c.ChunkId).ToArray()));
         store.Add(draft);
+        workflow.Complete();
         return draft;
     }
 

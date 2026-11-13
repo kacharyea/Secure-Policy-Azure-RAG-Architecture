@@ -2,6 +2,7 @@ namespace PolicyRag.Application;
 
 public sealed class RagOptions
 {
+    public string PromptVariant { get; set; } = "baseline";
     public string Mode { get; set; } = "Fixture";
     public bool UseEntraAuthentication { get; set; }
     public bool RequiresEntraAuthentication => Mode == "Azure" || UseEntraAuthentication;
@@ -24,7 +25,15 @@ public sealed record AskRequest(string Question, string? DocumentId = null);
 public sealed record ReviewRequest(string Decision);
 public sealed record Evidence(
     string Mode, string Authorization, int EmbeddingCalls, int GenerationCalls, int SearchCalls,
-    string Validation, string ReviewStatus, string CorrelationId, string[] SourceIds);
+    string Validation, string ReviewStatus, string CorrelationId, string[] SourceIds)
+{
+    public string TraceId { get; init; } = "";
+    public string PromptVariant { get; init; } = "baseline";
+    public StageEvidence[] Stages { get; init; } = [];
+    public TokenUsage Usage { get; init; } = new(null, null, null);
+}
+public sealed record StageEvidence(string Name, double DurationMs, string Outcome, bool Synthetic);
+public sealed record TokenUsage(long? EmbeddingTokens, long? InputTokens, long? OutputTokens);
 public sealed record Draft(
     Guid Id, string OwnerId, string Question, string Answer, string[] EvidenceGaps,
     Citation[] Citations, string[] DocumentIds, string Status, string ReviewStatus,
@@ -40,6 +49,14 @@ public sealed record DraftView(
 
 public sealed class RunMetrics(string correlationId, string mode)
 {
+    public string PromptVariant { get; set; } = "baseline";
+    public string ExperimentId { get; set; } = "";
+    public string TraceId { get; internal set; } = "";
+    public List<StageEvidence> Stages { get; } = [];
+    public long? EmbeddingTokens { get; set; }
+    public long? InputTokens { get; set; }
+    public long? OutputTokens { get; set; }
+    public string[] RetrievedSourceIds { get; set; } = [];
     public string CorrelationId { get; } = correlationId;
     public string Mode { get; } = mode;
     public string Authorization { get; set; } = "Pending";
@@ -47,9 +64,16 @@ public sealed class RunMetrics(string correlationId, string mode)
     public int GenerationCalls { get; set; }
     public int SearchCalls { get; set; }
     public string Validation { get; set; } = "NotRun";
+    public string AnswerStatus { get; set; } = "NotReturned";
     public Evidence Snapshot(string reviewStatus = "NotApplicable", string[]? sourceIds = null) =>
         new(Mode, Authorization, EmbeddingCalls, GenerationCalls, SearchCalls, Validation,
-            reviewStatus, CorrelationId, sourceIds ?? []);
+            reviewStatus, CorrelationId, sourceIds ?? [])
+        {
+            TraceId = TraceId,
+            PromptVariant = PromptVariant,
+            Stages = Stages.ToArray(),
+            Usage = new(EmbeddingTokens, InputTokens, OutputTokens)
+        };
 }
 
 public sealed class WorkflowException(

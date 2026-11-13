@@ -8,5 +8,7 @@
     <ProjectReference Include="..\PolicyRag.Application\PolicyRag.Application.csproj" />
     <PackageReference Include="Azure.Identity" Version="1.17.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.7.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
   </ItemGroup>
 </Project>

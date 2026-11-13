@@ -35,6 +35,21 @@ public sealed class HttpTests : IClassFixture<PocFactory>
     }
 
     [Fact]
+    public async Task Evaluation_viewer_is_a_static_local_report_reader_not_a_batch_endpoint()
+    {
+        var html = await client.GetStringAsync("/evaluation.html");
+        Assert.Contains("Files stay in this browser", html);
+        Assert.Contains("/evaluation.js", html);
+        Assert.Contains("type=\"file\"", html);
+        var script = await client.GetStringAsync("/evaluation.js");
+        Assert.Contains("file.text()", script);
+        Assert.DoesNotContain("innerHTML", script);
+        Assert.DoesNotContain("fetch(", script);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await client.PostAsJsonAsync("/api/evaluate", new { variant = "baseline" })).StatusCode);
+    }
+
+    [Fact]
     public async Task Denial_has_zero_calls_and_no_restricted_source_content()
     {
         client.DefaultRequestHeaders.Remove("X-Demo-Profile");

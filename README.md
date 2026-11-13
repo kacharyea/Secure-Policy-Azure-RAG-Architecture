@@ -39,6 +39,17 @@ the local transcript but does not delete server-side drafts or change identity/d
 Refreshing the page also clears the transcript; no browser transcript storage is used.
 Fixture-mode replies are scripted examples, not evidence of live model or Azure Search behavior.
 
+### Week 4: evaluate, trace, and hand off
+
+The [Week 4 runbook](docs/week4-evaluation.md) covers the 20-case evaluation runner,
+baseline/candidate prompt experiment, local HTML/JSON/CSV reports, read-only browser comparison,
+human scoring rubric, Entra-authenticated Application Insights traces, and handoff gates.
+Telemetry is off by default in code; the clinic machine explicitly enables it through local API
+User Secrets. The configured workbook and three Azure-mode-only alerts reuse existing monitoring
+resources through [infra/monitoring.bicep](infra/monitoring.bicep). Cloud ingestion and all workbook/
+alert queries were verified. Alerts are portal-only until an approved action group is supplied.
+Fixture results are control evidence, not proof of live model quality.
+
 ## Architecture
 
 ### Overall request flow
