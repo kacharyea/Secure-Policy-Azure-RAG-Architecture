@@ -7,6 +7,7 @@ public static partial class StartupValidation
 {
     public static void Validate(RagOptions options, bool development, AzureOptions? azure = null)
     {
+        _ = AI.PolicyPrompts.Get(options.PromptVariant);
         if (options.Mode is not ("Fixture" or "Azure"))
             throw new InvalidOperationException("Rag:Mode must be Fixture or Azure.");
         if (options.MaximumDrafts is < 1 or > 10000 || options.DraftLifetimeMinutes is < 1 or > 1440)

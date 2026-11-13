@@ -23,6 +23,7 @@ var browser = builder.Configuration.GetSection("BrowserSignIn").Get<BrowserSignI
 browser.Validate(options, builder.Environment);
 builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 16 * 1024);
 builder.Services.AddPolicyRagInfrastructure(options, azure, builder.Environment.IsDevelopment());
+builder.Services.AddWorkflowTelemetry(builder.Configuration);
 builder.Services.AddSingleton(_ => JsonPolicyManifest.Load(
     Path.Combine(AppContext.BaseDirectory, "Data", "policies.json")));
 builder.Services.AddScoped<RagOrchestrationService>();
@@ -64,7 +65,10 @@ var app = builder.Build();
 app.Use(async (context, next) =>
 {
     context.TraceIdentifier = Guid.NewGuid().ToString("N");
-    context.Items["metrics"] = new RunMetrics(context.TraceIdentifier, options.Mode);
+    context.Items["metrics"] = new RunMetrics(context.TraceIdentifier, options.Mode)
+    {
+        PromptVariant = options.PromptVariant
+    };
     context.Response.OnStarting(() =>
     {
         ApplyResponseHeaders(context, browser.Enabled);

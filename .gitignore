@@ -4,6 +4,7 @@
 ## Get latest from `dotnet new gitignore`
 
 # dotenv files
+artifacts/evaluations/
 .env
 
 # Customer/environment-specific configuration

@@ -64,7 +64,9 @@ summary { cursor: pointer; font-weight: 600; line-height: 1.6; }
 .source-meta { font-size: .78rem; color: #52677c; }
 dl { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: .6rem; }
 dt { font-weight: 600; }
-dd { margin: 0; font-family: ui-monospace, monospace; overflow-wrap: anywhere; }
+dd { margin: 0; font-family: ui-monospace, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
+#evaluation-results, #comparison { overflow-wrap: anywhere; }
+#evaluation-results pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 footer { padding: 1.2rem .2rem; }
 :focus-visible { outline: 3px solid #a36300; outline-offset: 3px; }
 [hidden] { display: none !important; }

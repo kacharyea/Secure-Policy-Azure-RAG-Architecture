@@ -36,7 +36,10 @@ function evidence(value) {
     const key = document.createElement("dt");
     const detail = document.createElement("dd");
     key.textContent = name;
-    detail.textContent = Array.isArray(content) ? content.join(", ") || "(none)" : String(content);
+    if (content !== null && typeof content === "object" &&
+        (!Array.isArray(content) || content.some(item => item !== null && typeof item === "object")))
+      detail.textContent = JSON.stringify(content, null, 2);
+    else detail.textContent = Array.isArray(content) ? content.join(", ") || "(none)" : String(content);
     target.append(key, detail);
   }
 }

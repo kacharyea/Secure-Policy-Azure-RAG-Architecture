@@ -1,6 +1,6 @@
 # Secure Policy RAG Sample
 
-A customer-neutral ASP.NET Core sample that demonstrates **authorize before grounding**:
+An environment-neutral ASP.NET Core sample for developers that demonstrates **authorize before grounding**:
 
 1. authenticate the caller;
 2. determine the caller's document entitlements;
@@ -11,6 +11,34 @@ A customer-neutral ASP.NET Core sample that demonstrates **authorize before grou
 
 All included policies, identities, and scenarios are fictional. This is an educational sample, not a
 production compliance system.
+
+## Developer quick start
+
+This repository is the **Secure Policy RAG** application, not the separate Foundry Hosted Agent
+POC. No access to the author's tenant, subscriptions, or existing lab resources is required.
+
+```powershell
+git clone https://github.com/kacharyea/Secure-Policy-Azure-RAG-Architecture.git
+Set-Location .\Secure-Policy-Azure-RAG-Architecture
+```
+
+If you fork the repository, clone your fork instead. Run all commands below from this repository
+root. Use **PowerShell 7** for deployment and a supported .NET 10 SDK.
+
+Choose one path:
+
+| Goal | Start here | Azure required? |
+|---|---|---|
+| Try the UI and authorization controls | [Get started locally](#get-started-locally) | No |
+| Use your own Search, models, and real user sign-in | [Deploy your own Azure environment](#deploy-your-own-azure-environment) | Yes; billable resources and directory permissions |
+| Publish the API to Azure | Complete Azure setup and ingestion, then [App Service hosting](#optional-app-service-hosting) | Yes |
+
+**For a first Azure run, use this order:** configure your environment and two distinct local
+certificates -> validate -> preview -> deploy -> approve browser consent -> load generated settings
+-> ingest using the indexer identity -> switch to the runtime identity -> start the API and sign in.
+Deployment alone does not grant consent, ingest documents, publish application code, or enable
+Application Insights. Detailed commands follow below; keep the same PowerShell session for the
+generated settings and certificate environment variables.
 
 ## What the sample contains
 
@@ -38,6 +66,19 @@ the transcript, including when a synthetic demo scenario switches profiles. **Ne
 the local transcript but does not delete server-side drafts or change identity/document scope.
 Refreshing the page also clears the transcript; no browser transcript storage is used.
 Fixture-mode replies are scripted examples, not evidence of live model or Azure Search behavior.
+
+### Week 4: evaluate, trace, and hand off
+
+The [Week 4 runbook](docs/week4-evaluation.md) covers the 20-case evaluation runner,
+baseline/candidate prompt experiment, local HTML/JSON/CSV reports, read-only browser comparison,
+human scoring rubric, Entra-authenticated Application Insights traces, and handoff gates.
+Telemetry is off by default. To enable it in your environment, follow the
+[telemetry setup and templates](docs/week4-evaluation.md#redeployment-and-optional-new-resource-alternative)
+using your own resources and approved publishing identity; the runbook's named clinic resources
+are examples, not developer prerequisites. [infra/monitoring.bicep](infra/monitoring.bicep) creates a
+workbook and three Azure-mode-only alerts against existing monitoring resources.
+Alerts are portal-only until an approved action group is supplied.
+Fixture results are control evidence, not proof of live model quality.
 
 ## Architecture
 
@@ -166,12 +207,21 @@ From the repository root:
 
 ```powershell
 dotnet restore
+if ($LASTEXITCODE -ne 0) { throw 'Restore failed.' }
 dotnet build
+if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 dotnet test --configuration Release --no-restore
+if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
 dotnet run --project .\backend\PolicyRag.Api --launch-profile Local
 ```
 
 Open <http://localhost:5270/>. The page must display **FIXTURE MODE**.
+
+Select **Sam**, choose the privileged-access review policy, and ask
+**"How often must privileged access be reviewed?"** Expect an answer with authorized citations.
+Switch to **Alex** and repeat the same restricted-policy request: expect access denied and zero
+downstream calls. `GET http://localhost:5270/health` should report `ready` / `Fixture`.
+Stop the API with Ctrl+C before changing profiles.
 
 Fixture mode uses:
 
@@ -201,7 +251,7 @@ Nested .NET settings use double underscores in environment variables. For exampl
 `Rag:Azure:SearchEndpoint` becomes `Rag__Azure__SearchEndpoint`.
 
 Do not commit tenant IDs, object IDs, resource endpoints, access tokens, client secrets, or
-customer data. Use environment variables, a local untracked settings file, or your organization's
+user data. Use environment variables, a local untracked settings file, or your organization's
 approved secret/configuration service.
 
 For Visual Studio development, right-click `PolicyRag.Api` and select **Manage User Secrets**.
@@ -264,6 +314,19 @@ Search or API Management; those are separate credentials in Azure mode.
 
 Use [infra/Deploy-Sample.ps1](infra/Deploy-Sample.ps1). Nothing deploys automatically when the
 application starts or when this repository is cloned.
+
+Run these checks before preparing the configuration:
+
+```powershell
+$PSVersionTable.PSVersion # Deployment requires 7.0 or later.
+dotnet --version         # A .NET 10 SDK must be installed.
+az version
+az bicep version
+```
+
+Install missing prerequisites using your organization's approved tooling. The repository's
+[Bicep configuration](infra/bicepconfig.json) selects its Microsoft Graph extension. The initial
+template compilation requires access to the configured public module/extension registries.
 
 ### 1. Prepare approved configuration and certificates
 
@@ -334,10 +397,15 @@ administrator; do not grant directory administration to the application runtime.
 ### 3. Deploy explicitly
 
 ```powershell
+$credentialDirectory = Join-Path $env:LOCALAPPDATA 'SecurePolicyRagCredentials'
 .\infra\Deploy-Sample.ps1 -ConfigurationPath .\infra\environment.local.json `
-  -BackendPublicCertificatePath 'C:\private\runtime-public.cer' `
-  -IndexerPublicCertificatePath 'C:\private\indexer-public.cer'
+  -BackendPublicCertificatePath (Join-Path $credentialDirectory 'runtime-public.cer') `
+  -IndexerPublicCertificatePath (Join-Path $credentialDirectory 'indexer-public.cer')
 ```
+
+These paths match the Windows development-certificate example above. Substitute your approved
+public certificate paths if using another PKI workflow. For local Azure hosting, supply **both**
+certificates so the generated outputs contain `backend` and `localIndexer`.
 
 Review the confirmation before proceeding. The script creates the resource group, gateway/API/SPA
 registrations and groups, Search/Foundry/APIM/Storage, runtime/indexer managed identities, and
@@ -395,7 +463,7 @@ when hosted. The human still signs into the UI for document permissions.
 
 The `.example.bicepparam` files and individual templates remain available for teams deploying stages
 separately. Do not deploy unchanged placeholders. Neither the script nor these templates include
-another customer's environment settings.
+another user's environment settings.
 
 ### Important deployment considerations
 
@@ -505,7 +573,7 @@ dotnet run --project .\backend\PolicyRag.Api --launch-profile Azure
 ```
 
 The certificate file must include its private key in a format supported by `EnvironmentCredential`.
-Never commit it, put it in the web root, or include it in the customer ZIP. Launch Visual Studio from
+Never commit it, put it in the web root, or include it in the shared source ZIP. Launch Visual Studio from
 the configured shell if using these process environment variables; an already-open Visual Studio
 does not inherit later environment changes.
 
@@ -540,10 +608,13 @@ $env:DOTNET_ENVIRONMENT = 'Development'
 $env:Rag__Mode = 'Azure'
 $env:AZURE_TENANT_ID = $config.tenantId
 $env:AZURE_CLIENT_ID = $deployment.localIndexer.clientId.value
-$env:AZURE_CLIENT_CERTIFICATE_PATH = 'C:\private\indexer-private.pem'
+$env:AZURE_CLIENT_CERTIFICATE_PATH = Join-Path $credentialDirectory 'indexer-private.pfx'
+# Set AZURE_CLIENT_CERTIFICATE_PASSWORD through your approved secret mechanism
+# to this indexer PFX's export password before running the next command.
 # Avoid an inherited client secret selecting a different credential.
 Remove-Item Env:AZURE_CLIENT_SECRET -ErrorAction SilentlyContinue
 dotnet run --project .\backend\PolicyRag.Indexer -- --ingest
+if ($LASTEXITCODE -ne 0) { throw 'Ingestion failed; resolve the error before starting the API.' }
 ```
 
 This creates/updates the configured index and uploads only the manifest-approved fictional chunks.
@@ -570,12 +641,37 @@ Then switch back to the **runtime** certificate and start the app:
 
 ```powershell
 $env:AZURE_CLIENT_ID = $deployment.backend.clientId.value
-$env:AZURE_CLIENT_CERTIFICATE_PATH = 'C:\private\runtime-private.pem'
+$env:AZURE_CLIENT_CERTIFICATE_PATH = Join-Path $credentialDirectory 'runtime-private.pfx'
+# Replace AZURE_CLIENT_CERTIFICATE_PASSWORD with this runtime PFX's export password.
 dotnet run --project .\backend\PolicyRag.Api --launch-profile Azure
 ```
 
 Open <http://localhost:5280/>. The banner must say **AZURE MODE**. Sign in with Microsoft and run
 the security test cases.
+
+### First-run acceptance checks and troubleshooting
+
+- Sign in as an approved reviewer-group member; the privileged-access question should return
+  authorized citations and evidence showing `Azure` mode and actual downstream calls.
+- In a separate browser profile, sign in as an employee-only member and explicitly request the
+  restricted policy; expect access denied and zero downstream calls.
+- A `ready` health response verifies startup only, **not** Search/model connectivity.
+- `AADSTS650057` or credential acquisition errors: verify that the runtime/indexer certificate
+  environment variables select the intended application identity. A developer CLI login or browser
+  token is not a substitute for the gateway's required application role.
+- `no_entitlements`: check approved group membership, configured group mappings, and token claims;
+  sign out/in after changes. Ownership of a group is not membership.
+- Browser consent errors: complete the approved per-user consent step; do not broaden consent
+  simply to bypass the error.
+- No matching evidence: confirm successful ingestion into the same Search endpoint/index used by
+  the API. Do not treat an empty index as proof of working model integration.
+- Missing MSAL assets: run `Restore-BrowserAssets.ps1`; do not disable its integrity checks.
+- HTTP 403 from dependencies: verify the exact selected service identity, gateway application-role
+  assignment, and resource-scoped RBAC; allow propagation before retrying.
+
+The evaluation console is optional and separate from API startup. Its reports and known Fixture
+NO-GO results are explained in the [Week 4 runbook](docs/week4-evaluation.md); a fixture NO-GO is not
+an infrastructure deployment failure.
 
 ## Optional App Service hosting
 
@@ -632,7 +728,7 @@ The [.gitignore](.gitignore) excludes build/IDE output, local environment settin
 exports, restored vendor assets, publish folders/packages, and generated Bicep JSON. Example
 configuration and Bicep source remain included. Ignore rules do not remove files already tracked.
 Never publish local configuration/outputs, certificates, User Secrets, `.vs`, build/publish output,
-tokens, customer documents, or another environment's IDs/endpoints. The ignored local files are
+tokens, user documents, or another environment's IDs/endpoints. The ignored local files are
 not a secret store. Choose an owner-approved open-source license before public distribution; this
 sample does not select a license on your behalf.
 

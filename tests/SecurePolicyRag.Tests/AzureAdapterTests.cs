@@ -8,6 +8,51 @@ namespace SecurePolicyRag.Tests;
 public sealed class AzureAdapterTests
 {
     [Fact]
+    public async Task Generation_variant_and_usage_are_captured_without_changing_json_contract()
+    {
+        const string answer = """{"status":"insufficient_evidence","excerpts":[]}""";
+        var body = JsonSerializer.Serialize(new
+        {
+            choices = new[] { new { message = new { content = answer } } },
+            usage = new { prompt_tokens = 123, completion_tokens = 17 }
+        });
+        var handler = new StubHandler(body);
+        var metrics = new RunMetrics("usage", "Azure") { PromptVariant = "candidate" };
+        await Provider(handler).GenerateAsync("question", [], metrics, default);
+        Assert.Equal(123, metrics.InputTokens);
+        Assert.Equal(17, metrics.OutputTokens);
+        using var request = JsonDocument.Parse(handler.Body!);
+        Assert.Equal(PolicyPrompts.Get("candidate"),
+            request.RootElement.GetProperty("messages")[0].GetProperty("content").GetString());
+    }
+
+    [Fact]
+    public async Task Embedding_usage_is_optional_and_unknown_is_not_zero()
+    {
+        var metrics = new RunMetrics("usage", "Azure");
+        await Provider(new StubHandler("""{"data":[{"embedding":[0.1,0.2]}],"usage":{"total_tokens":8}}"""))
+            .EmbedAsync("question", metrics, default);
+        Assert.Equal(8, metrics.EmbeddingTokens);
+        await Provider(new StubHandler("""{"data":[{"embedding":[0.1,0.2]}],"usage":{"total_tokens":"unknown"}}"""))
+            .EmbedAsync("question", metrics, default);
+        Assert.Null(metrics.EmbeddingTokens);
+    }
+
+    [Fact]
+    public async Task Anthropic_usage_uses_provider_field_names()
+    {
+        const string answer = """{"status":"insufficient_evidence","excerpts":[]}""";
+        var body = JsonSerializer.Serialize(new
+        {
+            content = new[] { new { type = "text", text = answer } },
+            usage = new { input_tokens = 100, output_tokens = 12 }
+        });
+        var metrics = new RunMetrics("anthropic-usage", "Azure");
+        await Provider(new StubHandler(body), "Anthropic").GenerateAsync("question", [], metrics, default);
+        Assert.Equal(100, metrics.InputTokens);
+        Assert.Equal(12, metrics.OutputTokens);
+    }
+    [Fact]
     public async Task Hybrid_search_always_sends_prefiltered_server_entitlements()
     {
         var handler = new StubHandler("""{"value":[]}""");
@@ -69,6 +114,7 @@ public sealed class AzureAdapterTests
     [InlineData("""{"data":[{"embedding":[0,0]}]}""")]
     [InlineData("""{"data":[]}""")]
     [InlineData("""{"unrelated":true}""")]
+    [InlineData("""[]""")]
     public async Task Malformed_embedding_is_not_a_success(string body)
     {
         var error = await Assert.ThrowsAsync<WorkflowException>(() =>
