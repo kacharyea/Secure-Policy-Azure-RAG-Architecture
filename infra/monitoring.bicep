@@ -18,6 +18,14 @@ param latencyThresholdMs int = 15000
 @minValue(1)
 param minimumLatencySamples int = 5
 
+@description('Environment label carried on every alert.')
+param environmentName string = 'demo'
+@description('Primary and backup owner shown on alerts. Use team or role names in committed files.')
+param ownerName string = 'unassigned'
+param backupOwnerName string = 'unassigned'
+@description('Base URL where the runbooks are published. Empty uses the relative docs/runbooks path.')
+param runbookBaseUrl string = ''
+
 resource insights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: insightsName
 }
@@ -184,6 +192,8 @@ resource workbook 'Microsoft.Insights/workbooks@2022-04-01' = {
 var alerts = [
   {
     name: 'policy-rag-unexpected-errors'
+    slug: 'unexpected-errors'
+    severityClass: 'Page'
     description: 'At least one failed Azure workflow in five minutes; expected access denials excluded.'
     severity: 2
     query: concat(requests, '''
@@ -195,12 +205,16 @@ var alerts = [
   }
   {
     name: 'policy-rag-high-latency'
+    slug: 'high-latency'
+    severityClass: 'CreateWork'
     description: 'Azure p95 workflow latency exceeds the provisional demo threshold, with a minimum sample count.'
     severity: 3
     query: concat(requests, '\n| where TimeGenerated > ago(5m)\n| where tostring(Properties["rag.mode"]) == "Azure"\n| where tostring(Properties["rag.authorization"]) != "Denied"\n| summarize Samples=count(), P95Ms=percentile(DurationMs, 95)\n| where Samples >= ${minimumLatencySamples} and P95Ms > ${latencyThresholdMs}')
   }
   {
     name: 'policy-rag-evaluation-regression'
+    slug: 'evaluation-regression'
+    severityClass: 'CreateWork'
     description: 'A completed Azure-mode deterministic batch has failed checks. Not an LLM quality/safety judge.'
     severity: 3
     query: concat(dependencies, '''
@@ -234,7 +248,19 @@ resource rules 'Microsoft.Insights/scheduledQueryRules@2023-12-01' = [for alert 
         failingPeriods: { numberOfEvaluationPeriods: 1, minFailingPeriodsToAlert: 1 }
       }]
     }
-    actions: { actionGroups: actionGroupResourceIds }
+    actions: {
+      actionGroups: actionGroupResourceIds
+      customProperties: {
+        service: 'policy-rag'
+        environment: environmentName
+        severityClass: alert.severityClass
+        owner: ownerName
+        backupOwner: backupOwnerName
+        runbook: empty(runbookBaseUrl) ? 'docs/runbooks/${alert.slug}.md' : '${runbookBaseUrl}/${alert.slug}.md'
+        dashboard: '${environment().portal}/#@/resource${workbook.id}'
+        firstAction: 'Open the runbook, then pivot from the alert rows to OperationId in Logs.'
+      }
+    }
   }
 }]
 
